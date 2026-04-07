@@ -469,6 +469,17 @@
     cursor: pointer;
   }
 
+  .btn-delete-habit {
+    width: 24px; height: 24px; border-radius: 50%;
+    border: none; background: none; cursor: pointer;
+    color: var(--text-muted); font-size: 16px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; transition: all 0.15s; flex-shrink: 0;
+    padding: 0;
+  }
+  .habit-name-cell:hover .btn-delete-habit { opacity: 1; }
+  .btn-delete-habit:hover { background: #fee2e2; color: #dc2626; }
+
   /* ---- TOAST ---- */
   .toast {
     position: fixed; bottom: 24px; right: 24px;
@@ -763,6 +774,18 @@ async function toggleCheck(habitId, day) {
   render();
 }
 
+async function deleteHabit(habitId) {
+  if (!confirm('Excluir este hábito? Todas as marcações também serão removidas.')) return;
+  await db.from('habit_checks').delete().eq('habit_id', habitId);
+  await db.from('habits').delete().eq('id', habitId);
+  habits = habits.filter(h => h.id !== habitId);
+  for (const key of Object.keys(checks)) {
+    if (key.startsWith(habitId + '_')) delete checks[key];
+  }
+  render();
+  showToast('Hábito excluído!');
+}
+
 async function saveHabit() {
   const name = document.getElementById('modal-habit-name').value.trim();
   const pts = parseInt(document.getElementById('modal-habit-pts').value) || 5;
@@ -875,6 +898,7 @@ function render() {
           <div class="habit-color-dot" style="background:${habit.color}"></div>
           <span class="habit-name-text">${habit.name}</span>
           <span class="habit-pts-badge">${habit.pts}pts</span>
+          <button class="btn-delete-habit" onclick="deleteHabit('${habit.id}')" title="Excluir hábito">✕</button>
         </div>
       </td>`;
 

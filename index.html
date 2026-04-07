@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Jardim de Hábitos</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,400;0,500;1,300;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --green-50: #f0f7ee;
+    --green-100: #d4eacc;
+    --green-200: #a8d499;
+    --green-400: #5fa843;
+    --green-600: #3a7a28;
+    --green-800: #1e4a12;
+    --green-900: #0f2a08;
+    --cream: #faf7f2;
+    --cream-dark: #f0ebe2;
+    --brown-200: #c9b89a;
+    --brown-400: #8b6f4e;
+    --brown-600: #5c4433;
+    --amber: #e8a020;
+    --rose: #c9607a;
+    --lavender: #7b6db5;
+    --sky: #4a9bb5;
+    --teal: #2e9475;
+    --coral: #c86040;
+    --text-primary: #1a1a18;
+    --text-secondary: #5a5a50;
+    --text-muted: #9a9a88;
+    --border: rgba(0,0,0,0.08);
+    --shadow: 0 2px 16px rgba(0,0,0,0.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+
+  /* ---- AUTH SCREEN ---- */
+  #auth-screen {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--cream);
+    position: relative;
+    overflow: hidden;
+  }
+
+  #auth-screen::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 600px 400px at 20% 80%, rgba(95,168,67,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 400px 300px at 80% 20%, rgba(46,148,117,0.1) 0%, transparent 70%);
+  }
+
+  .auth-card {
+    position: relative;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 56px 48px;
+    max-width: 420px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+  }
+
+  .auth-garden-icon {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 24px;
+    background: var(--green-50);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+  }
+
+  .auth-title {
+    font-family: 'Fraunces', serif;
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    line-height: 1.2;
+  }
+
+  .auth-title em {
+    font-style: italic;
+    color: var(--green-600);
+  }
+
+  .auth-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 36px;
+    line-height: 1.6;
+  }
+
+  .oauth-btn {
+    width: 100%;
+    padding: 14px 24px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    transition: all 0.15s;
+  }
+
+  .oauth-btn:hover {
+    background: var(--cream);
+    border-color: rgba(0,0,0,0.15);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow);
+  }
+
+  .oauth-btn svg { width: 20px; height: 20px; flex-shrink: 0; }
+
+  /* ---- APP LAYOUT ---- */
+  #app-screen { display: none; }
+
+  .topbar {
+    background: white;
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    font-family: 'Fraunces', serif;
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--green-800);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .topbar-logo span { font-style: italic; color: var(--green-600); }
+
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+
+  .user-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--green-100);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500; color: var(--green-800);
+    overflow: hidden;
+  }
+
+  .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .btn-logout {
+    font-size: 13px; color: var(--text-muted);
+    background: none; border: none; cursor: pointer; padding: 4px 8px;
+    border-radius: 6px; font-family: 'DM Sans', sans-serif;
+    transition: color 0.15s;
+  }
+  .btn-logout:hover { color: var(--text-primary); background: var(--cream); }
+
+  .main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 24px;
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    align-items: start;
+  }
+
+  /* ---- MONTH NAV ---- */
+  .month-header {
+    display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+  }
+
+  .month-nav-btn {
+    width: 36px; height: 36px; border-radius: 50%;
+    border: 1px solid var(--border); background: white;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; color: var(--text-secondary); transition: all 0.15s;
+  }
+  .month-nav-btn:hover { background: var(--green-50); border-color: var(--green-200); color: var(--green-600); }
+
+  .month-title {
+    font-family: 'Fraunces', serif;
+    font-size: 26px; font-weight: 400;
+    color: var(--text-primary);
+    flex: 1;
+  }
+
+  .month-title em { font-style: italic; color: var(--green-600); }
+
+  /* ---- HABITS TABLE ---- */
+  .habits-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+
+  .habits-card-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .habits-card-title {
+    font-size: 13px; font-weight: 500; color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 0.08em;
+  }
+
+  .btn-add-habit {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px;
+    background: var(--green-600); color: white;
+    border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-add-habit:hover { background: var(--green-800); transform: translateY(-1px); }
+
+  .habits-scroll { overflow-x: auto; }
+
+  table.habits-table {
+    width: 100%; border-collapse: collapse;
+    min-width: 700px;
+  }
+
+  .habits-table thead th {
+    padding: 8px 6px; text-align: center;
+    font-size: 11px; font-weight: 400; color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .habits-table thead th:first-child { text-align: left; padding-left: 24px; width: 200px; }
+
+  .habits-table tbody tr { transition: background 0.1s; }
+  .habits-table tbody tr:hover { background: var(--cream); }
+
+  .habits-table tbody td {
+    padding: 10px 6px; text-align: center;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    vertical-align: middle;
+  }
+
+  .habits-table tbody td:first-child {
+    text-align: left; padding-left: 24px; padding-right: 12px;
+  }
+
+  .habit-name-cell { display: flex; align-items: center; gap: 10px; }
+
+  .habit-color-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+
+  .habit-name-text { font-size: 14px; font-weight: 400; color: var(--text-primary); }
+  .habit-pts-badge {
+    font-size: 10px; color: var(--text-muted);
+    background: var(--cream-dark); padding: 2px 6px; border-radius: 10px;
+    white-space: nowrap;
+  }
+
+  .day-check-btn {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: none; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .day-check-btn:not(.done):not(.future):hover {
+    border-color: var(--green-400);
+    background: var(--green-50);
+  }
+
+  .day-check-btn.done {
+    border-color: transparent;
+  }
+
+  .day-check-btn.done svg { display: block; }
+  .day-check-btn svg { display: none; width: 12px; height: 12px; }
+
+  .day-check-btn.today-col {
+    box-shadow: 0 0 0 2px var(--sky);
+  }
+
+  .day-check-btn.future {
+    opacity: 0.25; pointer-events: none;
+  }
+
+  .today-marker {
+    font-size: 10px; font-weight: 500; color: var(--sky);
+  }
+
+  .habits-table tfoot td {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ---- ADD HABIT MODAL ---- */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: white; border-radius: 20px;
+    padding: 32px; width: 90%; max-width: 440px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.15);
+    transform: translateY(16px); transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+
+  .modal-title {
+    font-family: 'Fraunces', serif; font-size: 22px; font-weight: 400;
+    margin-bottom: 24px; color: var(--text-primary);
+  }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .form-input {
+    width: 100%; padding: 10px 14px;
+    border: 1px solid var(--border); border-radius: 10px;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    color: var(--text-primary); background: white;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus { outline: none; border-color: var(--green-400); }
+
+  .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-swatch {
+    width: 28px; height: 28px; border-radius: 50%; cursor: pointer;
+    border: 3px solid transparent; transition: all 0.15s;
+  }
+  .color-swatch.selected { border-color: var(--text-primary); transform: scale(1.15); }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+
+  .btn-primary {
+    flex: 1; padding: 12px; border-radius: 10px;
+    background: var(--green-600); color: white;
+    border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-primary:hover { background: var(--green-800); }
+
+  .btn-secondary {
+    padding: 12px 20px; border-radius: 10px;
+    background: none; color: var(--text-secondary);
+    border: 1px solid var(--border); cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 14px;
+    transition: all 0.15s;
+  }
+  .btn-secondary:hover { background: var(--cream); }
+
+  /* ---- SIDEBAR ---- */
+  .sidebar { display: flex; flex-direction: column; gap: 20px; }
+
+  .garden-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 20px; overflow: hidden; box-shadow: var(--shadow);
+  }
+
+  .garden-canvas-wrap { position: relative; }
+  #garden-canvas { width: 100%; height: 200px; display: block; }
+
+  .garden-info { padding: 20px; }
+
+  .garden-level-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  .garden-level-name {
+    font-family: 'Fraunces', serif; font-size: 18px; font-weight: 400;
+    color: var(--text-primary);
+  }
+
+  .garden-level-badge {
+    font-size: 11px; font-weight: 500;
+    background: var(--green-50); color: var(--green-800);
+    padding: 3px 10px; border-radius: 20px;
+    border: 1px solid var(--green-100);
+  }
+
+  .progress-track {
+    height: 6px; background: var(--cream-dark); border-radius: 3px; margin-bottom: 8px; overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%; border-radius: 3px;
+    background: linear-gradient(90deg, var(--green-400), var(--teal));
+    transition: width 0.5s ease;
+  }
+
+  .progress-label { font-size: 12px; color: var(--text-muted); }
+
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .stat-tile {
+    background: var(--cream); border-radius: 12px; padding: 14px;
+  }
+
+  .stat-tile-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  .stat-tile-value { font-size: 22px; font-weight: 500; color: var(--text-primary); font-family: 'Fraunces', serif; }
+  .stat-tile-sub { font-size: 11px; color: var(--text-muted); }
+
+  .streaks-card {
+    background: white; border: 1px solid var(--border);
+    border-radius: 20px; padding: 20px; box-shadow: var(--shadow);
+  }
+
+  .streaks-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px; }
+
+  .streak-row {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+  }
+  .streak-row:last-child { margin-bottom: 0; }
+
+  .streak-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .streak-name { font-size: 13px; color: var(--text-primary); flex: 1; }
+  .streak-count { font-size: 13px; font-weight: 500; color: var(--green-600); }
+
+  /* ---- ADD INLINE FORM ---- */
+  .add-row {
+    display: flex; align-items: center; gap: 8px; padding: 14px 24px;
+  }
+
+  .add-row-input {
+    flex: 1; font-size: 13px; color: var(--text-secondary);
+    border: none; background: none; font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+  }
+
+  /* ---- TOAST ---- */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: var(--text-primary); color: white;
+    padding: 12px 20px; border-radius: 10px;
+    font-size: 13px; z-index: 9999;
+    transform: translateY(20px); opacity: 0;
+    transition: all 0.3s; pointer-events: none;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  @media (max-width: 768px) {
+    .main { grid-template-columns: 1fr; }
+    .topbar { padding: 0 16px; }
+    .month-title { font-size: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-garden-icon">🌱</div>
+    <h1 class="auth-title">Jardim de<br><em>Hábitos</em></h1>
+    <p class="auth-subtitle">Cultive seus hábitos dia a dia e veja seu jardim pessoal florescer.</p>
+
+    <button class="oauth-btn" onclick="signInWith('google')">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Entrar com Google
+    </button>
+
+    <button class="oauth-btn" onclick="signInWith('github')">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z" fill="currentColor"/>
+      </svg>
+      Entrar com GitHub
+    </button>
+  </div>
+</div>
+
+<!-- APP SCREEN -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="topbar-logo">🌿 Jardim de <span>Hábitos</span></div>
+    <div class="topbar-right">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LEFT: habits -->
+    <div>
+      <div class="month-header">
+        <button class="month-nav-btn" onclick="changeMonth(-1)">&#8592;</button>
+        <h1 class="month-title" id="month-title">Abril <em>2025</em></h1>
+        <button class="month-nav-btn" onclick="changeMonth(1)">&#8594;</button>
+      </div>
+
+      <div class="habits-card">
+        <div class="habits-card-header">
+          <span class="habits-card-title">Hábitos do mês</span>
+          <button class="btn-add-habit" onclick="openModal()">+ Novo hábito</button>
+        </div>
+        <div class="habits-scroll">
+          <table class="habits-table">
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: sidebar -->
+    <div class="sidebar">
+      <div class="garden-card">
+        <div class="garden-canvas-wrap">
+          <canvas id="garden-canvas"></canvas>
+        </div>
+        <div class="garden-info">
+          <div class="garden-level-row">
+            <span class="garden-level-name" id="garden-level-name">Semente</span>
+            <span class="garden-level-badge" id="garden-level-badge">Nível 1</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-fill" style="width:0%"></div>
+          </div>
+          <div class="progress-label" id="progress-label">0 / 50 pts para o próximo nível</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-tile">
+          <div class="stat-tile-label">Pontos</div>
+          <div class="stat-tile-value" id="stat-pts">0</div>
+          <div class="stat-tile-sub">neste mês</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-label">Concluídos</div>
+          <div class="stat-tile-value" id="stat-checks">0</div>
+          <div class="stat-tile-sub">hábitos feitos</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-label">Taxa</div>
+          <div class="stat-tile-value" id="stat-rate">0%</div>
+          <div class="stat-tile-sub">de conclusão</div>
+        </div>
+        <div class="stat-tile">
+          <div class="stat-tile-label">Nível</div>
+          <div class="stat-tile-value" id="stat-level">1</div>
+          <div class="stat-tile-sub">do jardim</div>
+        </div>
+      </div>
+
+      <div class="streaks-card">
+        <div class="streaks-title">Sequências</div>
+        <div id="streaks-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD HABIT MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2 class="modal-title">Novo hábito</h2>
+    <div class="form-group">
+      <label class="form-label">Nome do hábito</label>
+      <input class="form-input" id="modal-habit-name" placeholder="Ex: Meditar 10 minutos" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Pontos por dia</label>
+      <input class="form-input" id="modal-habit-pts" type="number" min="1" max="100" value="5" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Cor</label>
+      <div class="color-picker" id="color-picker"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveHabit()">Salvar hábito</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://sfxkjpohlijxyvbzrabb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_qJQDvdFTQauCM40w10ir8A_axz95xi6';
+const { createClient } = supabase;
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const MONTHS_PT = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const HABIT_COLORS = [
+  { name: 'verde', hex: '#5fa843' },
+  { name: 'azul', hex: '#4a9bb5' },
+  { name: 'âmbar', hex: '#e8a020' },
+  { name: 'rosa', hex: '#c9607a' },
+  { name: 'verde-água', hex: '#2e9475' },
+  { name: 'lavanda', hex: '#7b6db5' },
+  { name: 'coral', hex: '#c86040' },
+  { name: 'marrom', hex: '#8b6f4e' },
+];
+
+const LEVELS = [
+  { name: 'Semente', min: 0, max: 50 },
+  { name: 'Broto', min: 50, max: 150 },
+  { name: 'Muda', min: 150, max: 300 },
+  { name: 'Arbusto', min: 300, max: 500 },
+  { name: 'Jardim florido', min: 500, max: 800 },
+  { name: 'Jardim exuberante', min: 800, max: 1200 },
+  { name: 'Paraíso verde', min: 1200, max: 99999 },
+];
+
+let currentUser = null;
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth();
+let habits = [];
+let checks = {};
+let selectedColor = HABIT_COLORS[0].hex;
+
+// ---- AUTH ----
+async function signInWith(provider) {
+  await db.auth.signInWithOAuth({ provider, options: { redirectTo: window.location.href } });
+}
+
+async function logout() {
+  await db.auth.signOut();
+  location.reload();
+}
+
+async function initAuth() {
+  const { data: { session } } = await db.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    showApp();
+  } else {
+    showAuth();
+  }
+
+  db.auth.onAuthStateChange((_event, session) => {
+    if (session) { currentUser = session.user; showApp(); }
+    else { showAuth(); }
+  });
+}
+
+function showAuth() {
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app-screen').style.display = 'none';
+}
+
+async function showApp() {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+
+  const meta = currentUser.user_metadata;
+  const avatarEl = document.getElementById('user-avatar');
+  if (meta.avatar_url) {
+    avatarEl.innerHTML = `<img src="${meta.avatar_url}" alt="" />`;
+  } else {
+    const name = meta.full_name || currentUser.email || '?';
+    avatarEl.textContent = name[0].toUpperCase();
+  }
+
+  await loadData();
+  render();
+}
+
+// ---- DATA ----
+async function loadData() {
+  const { data: habitsData } = await db.from('habits')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('created_at');
+
+  habits = habitsData || [];
+
+  if (habits.length === 0) {
+    await seedDefaultHabits();
+    const { data: h2 } = await db.from('habits').select('*').eq('user_id', currentUser.id).order('created_at');
+    habits = h2 || [];
+  }
+
+  const firstDay = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-01`;
+  const lastDay = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${getDaysInMonth()}`;
+
+  const { data: checksData } = await db.from('habit_checks')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .gte('check_date', firstDay)
+    .lte('check_date', lastDay);
+
+  checks = {};
+  (checksData || []).forEach(c => {
+    checks[`${c.habit_id}_${c.check_date}`] = c.id;
+  });
+}
+
+async function seedDefaultHabits() {
+  const defaults = [
+    { name: 'Acordar cedo', pts: 5, color: '#e8a020' },
+    { name: 'Treino / academia', pts: 10, color: '#4a9bb5' },
+    { name: 'Alimentação saudável', pts: 7, color: '#5fa843' },
+    { name: 'Ler / estudar', pts: 8, color: '#7b6db5' },
+  ];
+  for (const h of defaults) {
+    await db.from('habits').insert({ user_id: currentUser.id, name: h.name, pts: h.pts, color: h.color });
+  }
+}
+
+async function toggleCheck(habitId, day) {
+  const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+  const key = `${habitId}_${dateStr}`;
+
+  if (checks[key]) {
+    await db.from('habit_checks').delete().eq('id', checks[key]);
+    delete checks[key];
+  } else {
+    const { data } = await db.from('habit_checks').insert({
+      user_id: currentUser.id, habit_id: habitId, check_date: dateStr
+    }).select().single();
+    if (data) checks[key] = data.id;
+  }
+
+  render();
+}
+
+async function saveHabit() {
+  const name = document.getElementById('modal-habit-name').value.trim();
+  const pts = parseInt(document.getElementById('modal-habit-pts').value) || 5;
+  if (!name) return;
+
+  const { data } = await db.from('habits').insert({
+    user_id: currentUser.id, name, pts, color: selectedColor
+  }).select().single();
+
+  if (data) habits.push(data);
+  closeModal();
+  render();
+  showToast('Hábito adicionado!');
+}
+
+// ---- RENDER ----
+function getDaysInMonth() {
+  return new Date(currentYear, currentMonth + 1, 0).getDate();
+}
+
+function getToday() {
+  const n = new Date();
+  return { y: n.getFullYear(), m: n.getMonth(), d: n.getDate() };
+}
+
+function totalPoints() {
+  let pts = 0;
+  for (const key in checks) {
+    const habitId = key.split('_')[0];
+    const habit = habits.find(h => h.id == habitId);
+    if (habit) pts += habit.pts;
+  }
+  return pts;
+}
+
+function getStreaks() {
+  const today = getToday();
+  return habits.map(habit => {
+    let streak = 0;
+    let d = new Date(today.y, today.m, today.d);
+    while (true) {
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      const key = `${habit.id}_${dateStr}`;
+      if (checks[key]) { streak++; d.setDate(d.getDate() - 1); }
+      else break;
+    }
+    return { habit, streak };
+  }).filter(s => s.streak > 0).sort((a,b) => b.streak - a.streak);
+}
+
+function render() {
+  const days = getDaysInMonth();
+  const today = getToday();
+  const pts = totalPoints();
+  const totalChecked = Object.keys(checks).length;
+  const levelIdx = LEVELS.findIndex((l, i) => pts >= l.min && (i === LEVELS.length - 1 || pts < LEVELS[i+1].min));
+  const level = LEVELS[levelIdx >= 0 ? levelIdx : 0];
+  const nextLevel = LEVELS[levelIdx + 1];
+  const ptsInLevel = pts - level.min;
+  const ptsNeeded = nextLevel ? nextLevel.min - level.min : 1;
+  const pct = Math.min(100, Math.round((ptsInLevel / ptsNeeded) * 100));
+
+  // month title
+  const [mName, mYear] = [MONTHS_PT[currentMonth], currentYear];
+  document.getElementById('month-title').innerHTML = `${mName} <em>${mYear}</em>`;
+
+  // garden stats
+  document.getElementById('garden-level-name').textContent = level.name;
+  document.getElementById('garden-level-badge').textContent = `Nível ${levelIdx + 1}`;
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = nextLevel
+    ? `${ptsInLevel} / ${ptsNeeded} pts para o próximo nível`
+    : 'Nível máximo atingido!';
+  document.getElementById('stat-pts').textContent = pts;
+  document.getElementById('stat-checks').textContent = totalChecked;
+  const possibleChecks = habits.length * Math.min(days, today.m === currentMonth && today.y === currentYear ? today.d : days);
+  document.getElementById('stat-rate').textContent = possibleChecks > 0 ? Math.round((totalChecked / possibleChecks) * 100) + '%' : '0%';
+  document.getElementById('stat-level').textContent = levelIdx + 1;
+
+  // streaks
+  const streaks = getStreaks();
+  const streaksEl = document.getElementById('streaks-container');
+  if (streaks.length === 0) {
+    streaksEl.innerHTML = '<p style="font-size:13px;color:var(--text-muted)">Comece a marcar seus hábitos para ver sequências!</p>';
+  } else {
+    streaksEl.innerHTML = streaks.slice(0,5).map(s => `
+      <div class="streak-row">
+        <div class="streak-dot" style="background:${s.habit.color}"></div>
+        <span class="streak-name">${s.habit.name}</span>
+        <span class="streak-count">${s.streak}d 🔥</span>
+      </div>`).join('');
+  }
+
+  // table header
+  const thead = document.getElementById('table-head');
+  let headerHtml = '<tr><th>Hábito</th>';
+  for (let d = 1; d <= days; d++) {
+    const isToday = today.y === currentYear && today.m === currentMonth && today.d === d;
+    headerHtml += `<th>${isToday ? `<div class="today-marker">hoje</div>` : ''}${d}</th>`;
+  }
+  headerHtml += '</tr>';
+  thead.innerHTML = headerHtml;
+
+  // table body
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = habits.map(habit => {
+    let row = `<tr>
+      <td>
+        <div class="habit-name-cell">
+          <div class="habit-color-dot" style="background:${habit.color}"></div>
+          <span class="habit-name-text">${habit.name}</span>
+          <span class="habit-pts-badge">${habit.pts}pts</span>
+        </div>
+      </td>`;
+
+    for (let d = 1; d <= days; d++) {
+      const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const key = `${habit.id}_${dateStr}`;
+      const done = !!checks[key];
+      const isToday = today.y === currentYear && today.m === currentMonth && today.d === d;
+      const isFuture = currentYear > today.y || (currentYear === today.y && currentMonth > today.m) ||
+        (currentYear === today.y && currentMonth === today.m && d > today.d);
+
+      const classes = ['day-check-btn', done ? 'done' : '', isToday ? 'today-col' : '', isFuture ? 'future' : ''].filter(Boolean).join(' ');
+      const style = done ? `background:${habit.color};` : '';
+
+      row += `<td>
+        <button class="${classes}" style="${style}" onclick="toggleCheck('${habit.id}', ${d})" title="Dia ${d}">
+          <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M1.5 6l3 3 6-6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </td>`;
+    }
+
+    row += '</tr>';
+    return row;
+  }).join('');
+
+  drawGarden(levelIdx >= 0 ? levelIdx : 0, pts);
+}
+
+// ---- GARDEN ----
+function drawGarden(levelIdx, pts) {
+  const canvas = document.getElementById('garden-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth;
+  const H = 200;
+  canvas.width = W * window.devicePixelRatio;
+  canvas.height = H * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // sky
+  const skyColors = ['#d4f0c0','#c8ecf0','#c0e4f8','#b8e8f4','#a8e0f0','#90d8e8','#78c8e0'];
+  ctx.fillStyle = skyColors[Math.min(levelIdx, skyColors.length-1)];
+  ctx.fillRect(0, 0, W, H);
+
+  const groundY = H - 36;
+  ctx.fillStyle = '#8bc34a';
+  ctx.fillRect(0, groundY, W, 14);
+  ctx.fillStyle = '#6d4c41';
+  ctx.fillRect(0, groundY + 14, W, H - groundY - 14);
+
+  drawSun(ctx, W - 40, 36, levelIdx);
+  if (levelIdx >= 2) drawCloud(ctx, 50, 28);
+  if (levelIdx >= 4) drawCloud(ctx, W * 0.55, 22);
+
+  if (levelIdx === 0) {
+    drawSeed(ctx, W/2, groundY - 4);
+  } else if (levelIdx === 1) {
+    drawSprout(ctx, W/2, groundY);
+  } else if (levelIdx === 2) {
+    drawSmallPlant(ctx, W/2, groundY);
+    drawFlower(ctx, W*0.22, groundY, '#e8a020', 0.65);
+    drawFlower(ctx, W*0.78, groundY, '#c9607a', 0.65);
+  } else if (levelIdx === 3) {
+    drawBush(ctx, W/2, groundY, 1.0);
+    drawFlower(ctx, W*0.15, groundY, '#e8a020', 0.9);
+    drawFlower(ctx, W*0.32, groundY, '#c9607a', 0.85);
+    drawFlower(ctx, W*0.68, groundY, '#7b6db5', 0.85);
+    drawFlower(ctx, W*0.85, groundY, '#4a9bb5', 0.9);
+  } else if (levelIdx === 4) {
+    drawTree(ctx, W/2, groundY, '#2e9475', 1.0);
+    drawBush(ctx, W*0.18, groundY, 0.7);
+    drawBush(ctx, W*0.82, groundY, 0.7);
+    ['#e8a020','#c9607a','#7b6db5','#4a9bb5','#c86040','#2e9475'].forEach((c,i) => {
+      drawFlower(ctx, W*0.08 + W*0.84*i/5, groundY, c, 0.9);
+    });
+  } else if (levelIdx === 5) {
+    drawTree(ctx, W*0.35, groundY, '#2e9475', 1.1);
+    drawTree(ctx, W*0.68, groundY, '#1a6b4a', 0.9);
+    drawBush(ctx, W*0.1, groundY, 0.8);
+    drawBush(ctx, W*0.9, groundY, 0.8);
+    ['#e8a020','#c9607a','#7b6db5','#4a9bb5','#c86040','#2e9475','#e8a020','#c9607a'].forEach((c,i) => {
+      drawFlower(ctx, W*0.04 + W*0.92*i/7, groundY, c, 1.0);
+    });
+  } else {
+    drawTree(ctx, W*0.2, groundY, '#2e9475', 1.15);
+    drawTree(ctx, W*0.5, groundY, '#1a6b4a', 1.35);
+    drawTree(ctx, W*0.8, groundY, '#2e9475', 1.05);
+    drawBush(ctx, W*0.06, groundY, 0.9);
+    drawBush(ctx, W*0.94, groundY, 0.9);
+    ['#e8a020','#c9607a','#7b6db5','#4a9bb5','#c86040','#2e9475','#e8a020','#c9607a','#7b6db5','#4a9bb5'].forEach((c,i) => {
+      drawFlower(ctx, W*0.02 + W*0.96*i/9, groundY, c, 1.05);
+    });
+    drawButterfly(ctx, W*0.62, groundY - 65);
+    drawButterfly(ctx, W*0.28, groundY - 85);
+  }
+}
+
+function drawSeed(ctx, x, y) {
+  ctx.fillStyle = '#795548';
+  ctx.beginPath(); ctx.ellipse(x, y, 6, 9, 0.3, 0, Math.PI*2); ctx.fill();
+}
+function drawSprout(ctx, x, y) {
+  ctx.strokeStyle='#4caf50'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y-28); ctx.stroke();
+  ctx.fillStyle='#66bb6a';
+  ctx.beginPath(); ctx.ellipse(x-9,y-22,9,6,-0.5,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x+10,y-30,9,6,0.5,0,Math.PI*2); ctx.fill();
+}
+function drawSmallPlant(ctx, x, y) {
+  ctx.strokeStyle='#388e3c'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,y-40); ctx.stroke();
+  ctx.fillStyle='#4caf50';
+  for (let i=0;i<3;i++) {
+    ctx.beginPath(); ctx.ellipse(i%2===0?x-14:x+14, y-16-i*12, 13, 7, i%2===0?-0.4:0.4, 0, Math.PI*2); ctx.fill();
+  }
+}
+function drawBush(ctx, x, y, s) {
+  s=s||1;
+  [['#388e3c',0,-28,20],['#4caf50',-18,-18,16],['#4caf50',18,-18,16],['#66bb6a',-10,-38,13],['#66bb6a',10,-38,13]].forEach(([c,dx,dy,r]) => {
+    ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x+dx*s,y+dy*s,r*s,0,Math.PI*2); ctx.fill();
+  });
+}
+function drawTree(ctx, x, y, color, s) {
+  s=s||1;
+  ctx.fillStyle='#795548'; ctx.fillRect(x-6*s, y-50*s, 12*s, 50*s);
+  [[color,0,-88,30],[color==='#2e9475'?'#1a6b4a':'#0d4a2e',0,-112,22],[color,0,-130,16]].forEach(([c,,dy,r]) => {
+    ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x, y+dy*s, r*s, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x,y-88*s,30*s,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#1a5c38'; ctx.beginPath(); ctx.arc(x,y-112*s,22*s,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x,y-130*s,15*s,0,Math.PI*2); ctx.fill();
+}
+function drawFlower(ctx, x, y, color, s) {
+  s=s||1;
+  const fy=y-18*s-4*s;
+  ctx.strokeStyle='#4caf50'; ctx.lineWidth=1.5*s;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x,fy+4*s); ctx.stroke();
+  ctx.fillStyle=color;
+  for (let i=0;i<6;i++) {
+    const a=i/6*Math.PI*2;
+    ctx.beginPath(); ctx.arc(x+Math.cos(a)*8*s, fy+Math.sin(a)*8*s, 5*s, 0, Math.PI*2); ctx.fill();
+  }
+  ctx.fillStyle='#fff9c4'; ctx.beginPath(); ctx.arc(x,fy,4*s,0,Math.PI*2); ctx.fill();
+}
+function drawSun(ctx, x, y, lvl) {
+  const r=16+lvl*2;
+  ctx.fillStyle='#FAC775'; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  if (lvl>=3) {
+    ctx.strokeStyle='#FAC775'; ctx.lineWidth=2;
+    for (let i=0;i<8;i++) {
+      const a=i/8*Math.PI*2;
+      ctx.beginPath(); ctx.moveTo(x+Math.cos(a)*(r+4),y+Math.sin(a)*(r+4)); ctx.lineTo(x+Math.cos(a)*(r+10),y+Math.sin(a)*(r+10)); ctx.stroke();
+    }
+  }
+}
+function drawCloud(ctx, x, y) {
+  ctx.fillStyle='rgba(255,255,255,0.82)';
+  [{dx:0,dy:0,r:12},{dx:-14,dy:5,r:9},{dx:14,dy:5,r:9},{dx:-7,dy:10,r:8},{dx:7,dy:10,r:8}].forEach(b => {
+    ctx.beginPath(); ctx.arc(x+b.dx,y+b.dy,b.r,0,Math.PI*2); ctx.fill();
+  });
+}
+function drawButterfly(ctx, x, y) {
+  ctx.fillStyle='rgba(201,96,122,0.7)';
+  ctx.beginPath(); ctx.ellipse(x-8,y,8,5,-0.4,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x+8,y,8,5,0.4,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#5d4037'; ctx.beginPath(); ctx.ellipse(x,y,2,6,0,0,Math.PI*2); ctx.fill();
+}
+
+// ---- MODAL ----
+function openModal() {
+  const picker = document.getElementById('color-picker');
+  picker.innerHTML = HABIT_COLORS.map(c => `
+    <div class="color-swatch ${c.hex === selectedColor ? 'selected' : ''}"
+         style="background:${c.hex}"
+         onclick="selectColor('${c.hex}', this)"></div>`).join('');
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('modal-habit-name').focus();
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+  document.getElementById('modal-habit-name').value = '';
+  document.getElementById('modal-habit-pts').value = '5';
+}
+
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function selectColor(hex, el) {
+  selectedColor = hex;
+  document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// ---- MONTH NAV ----
+async function changeMonth(dir) {
+  currentMonth += dir;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  await loadData();
+  render();
+}
+
+// ---- TOAST ----
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ---- INIT ----
+initAuth();
+</script>
+</body>
+</html>

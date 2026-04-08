@@ -469,16 +469,32 @@
     cursor: pointer;
   }
 
-  .btn-delete-habit {
-    width: 24px; height: 24px; border-radius: 50%;
-    border: none; background: none; cursor: pointer;
-    color: var(--text-muted); font-size: 16px; line-height: 1;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: all 0.15s; flex-shrink: 0;
-    padding: 0;
+  .btn-manage {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 8px;
+    background: none; color: var(--text-secondary);
+    border: 1px solid var(--border); cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
   }
-  .habit-name-cell:hover .btn-delete-habit { opacity: 1; }
-  .btn-delete-habit:hover { background: #fee2e2; color: #dc2626; }
+  .btn-manage:hover { background: var(--cream-dark); }
+
+  .manage-habit-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .manage-habit-row:last-child { border-bottom: none; }
+  .manage-habit-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .manage-habit-name { flex: 1; font-size: 14px; color: var(--text-primary); }
+  .manage-habit-pts { font-size: 12px; color: var(--text-muted); background: var(--cream-dark); padding: 2px 8px; border-radius: 10px; }
+  .btn-delete-habit {
+    padding: 6px 12px; border-radius: 8px;
+    border: 1px solid #fecaca; background: #fff5f5;
+    color: #dc2626; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-delete-habit:hover { background: #fee2e2; }
 
   /* ---- TOAST ---- */
   .toast {
@@ -548,7 +564,10 @@
       <div class="habits-card">
         <div class="habits-card-header">
           <span class="habits-card-title">Hábitos do mês</span>
-          <button class="btn-add-habit" onclick="openModal()">+ Novo hábito</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn-manage" onclick="openManageModal()">⚙ Gerenciar</button>
+            <button class="btn-add-habit" onclick="openModal()">+ Novo hábito</button>
+          </div>
         </div>
         <div class="habits-scroll">
           <table class="habits-table">
@@ -604,6 +623,17 @@
         <div class="streaks-title">Sequências</div>
         <div id="streaks-container"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGE HABITS MODAL -->
+<div class="modal-overlay" id="manage-modal-overlay" onclick="closeManageModalOutside(event)">
+  <div class="modal">
+    <h2 class="modal-title">Gerenciar hábitos</h2>
+    <div id="manage-habits-list"></div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn-primary" onclick="closeManageModal()">Fechar</button>
     </div>
   </div>
 </div>
@@ -898,7 +928,6 @@ function render() {
           <div class="habit-color-dot" style="background:${habit.color}"></div>
           <span class="habit-name-text">${habit.name}</span>
           <span class="habit-pts-badge">${habit.pts}pts</span>
-          <button class="btn-delete-habit" onclick="deleteHabit('${habit.id}')" title="Excluir hábito">✕</button>
         </div>
       </td>`;
 
@@ -1068,6 +1097,44 @@ function drawButterfly(ctx, x, y) {
   ctx.beginPath(); ctx.ellipse(x-8,y,8,5,-0.4,0,Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.ellipse(x+8,y,8,5,0.4,0,Math.PI*2); ctx.fill();
   ctx.fillStyle='#5d4037'; ctx.beginPath(); ctx.ellipse(x,y,2,6,0,0,Math.PI*2); ctx.fill();
+}
+
+function openManageModal() {
+  const list = document.getElementById('manage-habits-list');
+  if (habits.length === 0) {
+    list.innerHTML = '<p style="font-size:14px;color:var(--text-muted);text-align:center;padding:16px 0;">Nenhum hábito cadastrado.</p>';
+  } else {
+    list.innerHTML = habits.map(h => `
+      <div class="manage-habit-row" id="manage-row-${h.id}">
+        <div class="manage-habit-dot" style="background:${h.color}"></div>
+        <span class="manage-habit-name">${h.name}</span>
+        <span class="manage-habit-pts">${h.pts} pts</span>
+        <button class="btn-delete-habit" onclick="deleteHabit('${h.id}')">Excluir</button>
+      </div>`).join('');
+  }
+  document.getElementById('manage-modal-overlay').classList.add('open');
+}
+
+function closeManageModal() {
+  document.getElementById('manage-modal-overlay').classList.remove('open');
+}
+
+function closeManageModalOutside(e) {
+  if (e.target === document.getElementById('manage-modal-overlay')) closeManageModal();
+}
+
+async function deleteHabit(habitId) {
+  if (!confirm('Excluir este hábito? Todas as marcações também serão removidas.')) return;
+  await db.from('habit_checks').delete().eq('habit_id', habitId);
+  await db.from('habits').delete().eq('id', habitId);
+  habits = habits.filter(h => h.id !== habitId);
+  for (const key of Object.keys(checks)) {
+    if (key.startsWith(habitId + '_')) delete checks[key];
+  }
+  const row = document.getElementById('manage-row-' + habitId);
+  if (row) row.remove();
+  render();
+  showToast('Hábito excluído!');
 }
 
 // ---- MODAL ----
